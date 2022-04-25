@@ -84,11 +84,7 @@ class HfH_Registration_Controller extends WP_REST_Controller
 
         $user = get_user_by('email', $registration['email']);
 
-        if ($user) {
-            if ($user->user_login != $registration['username']) {
-                return new WP_Error('duplicate-user', __('A user with this email adress but a different username already exists.', 'hfh-registration'), array('status' => 422));
-            }
-        } else {
+        if (!$user) {
             $password = wp_generate_password();
 
             $userdata = array(
@@ -123,7 +119,6 @@ class HfH_Registration_Controller extends WP_REST_Controller
         }
 
         return $this->prepare_item_for_response($user, $request);
-        return array();
     }
 
 
