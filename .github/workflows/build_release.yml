@@ -33,3 +33,4 @@ jobs:
         name: ${{ steps.wp_version.outputs.version}}
         draft: false
         prerelease: false
+        files: ./dist/**
