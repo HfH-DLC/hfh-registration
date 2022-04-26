@@ -24,8 +24,8 @@ jobs:
           core.setFailed('wp_version not set')
     - name: Build
       run: |
-         mkdir dist
-         rsync -av ./ dist --exclude .github
+         zip -r ${{ github.event.repository.name }}.zip . -x ".git/*" ".github/*" ".gitignore"
+         
     - name: Release
       uses:  softprops/action-gh-release@v1
       with:
@@ -33,4 +33,4 @@ jobs:
         name: ${{ steps.wp_version.outputs.version}}
         draft: false
         prerelease: false
-        files: ./dist/**
+        files: ./${{ github.event.repository.name }}.zip
