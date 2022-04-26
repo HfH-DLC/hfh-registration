@@ -1,4 +1,4 @@
-name: Release
+name: Build & Release
 
 on:
   push:
@@ -22,6 +22,10 @@ jobs:
       with:
         script: |
           core.setFailed('wp_version not set')
+    - name: Build
+      run: |
+         mkdir dist
+         rsync -av ./ dist --exclude .github
     - name: Release
       uses:  softprops/action-gh-release@v1
       with:
