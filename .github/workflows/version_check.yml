@@ -3,22 +3,22 @@ name: Version Check
 on:
   workflow_dispatch:
   pull_request:
-    branches: [ main ]
-    
+    branches: [main]
+
 jobs:
   check_version:
     runs-on: ubuntu-latest
-    
+
     env:
-      USES_PACKAGE_JSON: true
+      USES_PACKAGE_JSON: false
 
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0 # Required due to the weg Git works, without it this action won't be able to find any or the correct tags
       - id: wp_version
-        env: 
-          WP_VERSION_FILE: 'hfh-registration.php'
+        env:
+          WP_VERSION_FILE: "hfh-registration.php"
         run: echo "::set-output name=version::$(perl -n -e'/Version:\s*(\d.\d.\d)/ && print $1' $WP_VERSION_FILE)"
       - name: Check if wp_version is set
         if: ${{ !steps.wp_version.outputs.version }}
@@ -28,7 +28,7 @@ jobs:
             core.setFailed('wp_version not set')
       - id: package_json_version
         if: ${{ env.USES_PACKAGE_JSON }}
-        run: |         
+        run: |
           PACKAGE_JSON_VERSION=$(npm pkg get version | sed 's/"//g')
           echo "Version: $PACKAGE_JSON_VERSION"
           echo "::set-output name=version::$PACKAGE_JSON_VERSION"
@@ -48,14 +48,14 @@ jobs:
         id: previoustag
         uses: "WyriHaximus/github-action-get-previous-tag@v1"
         with:
-         fallback: 0.0.0
+          fallback: 0.0.0
       - name: Get possible next versions
         id: nexttags
         uses: "WyriHaximus/github-action-next-semvers@v1"
         with:
           version: ${{ steps.previoustag.outputs.tag }}
       - name: Validate version
-        if:  ${{ steps.nexttags.outputs.major != steps.wp_version.outputs.version && steps.nexttags.outputs.minor != steps.wp_version.outputs.version && steps.nexttags.outputs.patch != steps.wp_version.outputs.version }} 
+        if: ${{ steps.nexttags.outputs.major != steps.wp_version.outputs.version && steps.nexttags.outputs.minor != steps.wp_version.outputs.version && steps.nexttags.outputs.patch != steps.wp_version.outputs.version }}
         uses: actions/github-script@v3
         with:
           script: |
