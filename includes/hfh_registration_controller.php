@@ -1,5 +1,12 @@
 <?php
 
+namespace Hfh\Registration;
+
+use WP_Error;
+use WP_REST_Controller;
+use WP_REST_Response;
+use WP_REST_Server;
+
 class HfH_Registration_Controller extends WP_REST_Controller
 {
 
@@ -105,7 +112,9 @@ class HfH_Registration_Controller extends WP_REST_Controller
                 }
             }
             $user = get_user_by('id', $result);
-            wp_new_user_notification($user->ID, null, 'user');
+            if (get_site_option('hfh_registration_send_email')) {
+                wp_new_user_notification($user->ID, null, 'user');
+            }
         }
 
         if (!$user) {
