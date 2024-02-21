@@ -58,17 +58,23 @@ class HfH_Registration_Controller extends WP_REST_Controller
      */
     public function create_registration($request)
     {
+        $this->log_registration_info("Creating registration...");
         $registration = $this->prepare_item_for_database($request);
+        $this->log_registration_info(json_encode($registration));
         if (method_exists($this, 'register')) {
             $result = $this->register($registration, $request);
             if (is_array($result)) {
+                $this->log_registration_info("Registration complete.");
                 return new WP_REST_Response($result, 200);
             }
             if (is_wp_error($result)) {
+                $messages = $result->get_error_messages();
+                $this->log_registration_error(implode(", ", $messages));
                 return $result;
             }
         }
 
+        $this->log_registration_error("An error occured during the registration.");
         return new WP_Error('registration-failed', __('An error occured during the registration.', 'hfh-registration'), array('status' => 500));
     }
 
@@ -92,6 +98,7 @@ class HfH_Registration_Controller extends WP_REST_Controller
         $user = get_user_by('email', $registration['email']);
 
         if (!$user) {
+            $this->log_registration_info("No existing user found. Creating new user.");
             $password = wp_generate_password();
 
             $userdata = array(
@@ -112,13 +119,14 @@ class HfH_Registration_Controller extends WP_REST_Controller
                 }
             }
             $user = get_user_by('id', $result);
-            if (get_site_option('hfh_registration_send_email')) {
+            if ($user && get_site_option('hfh_registration_send_email')) {
+                $this->log_registration_info("Sending registration notification mail.");
                 wp_new_user_notification($user->ID, null, 'user');
             }
         }
 
         if (!$user) {
-            return false;
+            return  new WP_Error('user-not-created', __('User could not be created.', 'hfh-registration'), array('status' => 500));
         }
         if (!is_user_member_of_blog($book_id, $user->ID)) {
             $add_result = add_user_to_blog($book_id, $user->ID, 'subscriber');
@@ -126,7 +134,6 @@ class HfH_Registration_Controller extends WP_REST_Controller
                 return $add_result;
             }
         }
-
         return $this->prepare_item_for_response($user, $request);
     }
 
@@ -176,5 +183,15 @@ class HfH_Registration_Controller extends WP_REST_Controller
             "first_name" => $item->first_name,
             "last_name" => $item->last_name,
         );
+    }
+
+    private function log_registration_info(string $message)
+    {
+        error_log("hfh-registration::info:: " . $message);
+    }
+
+    private function log_registration_error(string $message)
+    {
+        error_log("hfh-registration::error:: " . $message);
     }
 }
