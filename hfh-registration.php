@@ -10,7 +10,7 @@
  * @wordpress-plugin
  * Plugin Name: HfH Registration
  * Description: A plugin to allow adding users to a specific site within a multisite via REST Api.
- * Version:     1.0.2
+ * Version:     1.0.3
  * Author:      Matthias Nötzli
  * Text Domain: hfh-registration
  * License:     GPL v2 or later
