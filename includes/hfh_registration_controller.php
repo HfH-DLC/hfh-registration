@@ -95,34 +95,47 @@ class HfH_Registration_Controller extends WP_REST_Controller
             return new WP_Error('book-not-found', __('No book found for the requested book ID.', 'hfh-registration'), array('status' => 422));
         }
 
-        $user = get_user_by('email', $registration['email']);
+        $user = get_user_by('login', $registration['username']);
 
         if (!$user) {
             $this->log_registration_info("No existing user found. Creating new user.");
             $password = wp_generate_password();
 
-            $userdata = array(
+            $user_data = array(
                 'user_pass' => $password,
                 'user_login' => $registration['username'],
                 'user_email' => $registration['email'],
                 'first_name' => $registration['first_name'],
                 'last_name' => $registration['last_name']
             );
-            $result = wp_insert_user($userdata);
-            if (is_wp_error($result)) {
-                return $result;
+            $insert_result = wp_insert_user($user_data);
+            if (is_wp_error($insert_result)) {
+                return $insert_result;
             }
             if ($main_site_id != $book_id) {
-                $remove_result = remove_user_from_blog($result, $main_site_id);
+                $remove_result = remove_user_from_blog($insert_result, $main_site_id);
                 if (is_wp_error($remove_result)) {
                     return $remove_result;
                 }
             }
-            $user = get_user_by('id', $result);
+            $user = get_user_by('id', $insert_result);
             if ($user && get_site_option('hfh_registration_send_email')) {
                 $this->log_registration_info("Sending registration notification mail.");
                 wp_new_user_notification($user->ID, null, 'user');
             }
+        } else {
+            $this->log_registration_info("User found. Updating user data.");
+            $user_data = array(
+                'ID' => $user->ID,
+                'user_email' => $registration['email'],
+                'first_name' => $registration['first_name'],
+                'last_name' => $registration['last_name']
+            );
+            $update_result = wp_update_user($user_data);
+            if (is_wp_error($update_result)) {
+                return $update_result;
+            }
+            $user = get_user_by('id', $user->ID);
         }
 
         if (!$user) {
@@ -136,8 +149,6 @@ class HfH_Registration_Controller extends WP_REST_Controller
         }
         return $this->prepare_item_for_response($user, $request);
     }
-
-
 
     /**
      * Check if a given request has access to create items
